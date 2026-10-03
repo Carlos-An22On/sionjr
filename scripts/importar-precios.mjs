@@ -1,0 +1,12 @@
+import { readFileSync, mkdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
+import { randomUUID } from 'node:crypto';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const records=JSON.parse(readFileSync(process.argv[2]||resolve(root,'precios-iniciales.json'),'utf8'));
+if(!Array.isArray(records))throw Error('El archivo debe ser una lista JSON.');
+for(const r of records)if(!r||typeof r.name!=='string'||!r.name.trim()||r.name.length>80||!Number.isSafeInteger(r.price)||r.price<0||r.price>100000000||!['kg','unidad','tonelada'].includes(r.unit)||!['','castilla','acacias','villavicencio','restrepo'].includes(r.zone))throw Error('Registro no válido. Revisa nombre, precio, unidad y zona.');
+const file=resolve(root,process.env.DATABASE_PATH||'data/sion.sqlite');mkdirSync(dirname(file),{recursive:true});const db=new DatabaseSync(file);db.exec("CREATE TABLE IF NOT EXISTS materials(id TEXT PRIMARY KEY,name TEXT NOT NULL,price INTEGER NOT NULL,unit TEXT NOT NULL,zone TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL)");
+const q=db.prepare('INSERT INTO materials VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,price=excluded.price,unit=excluded.unit,zone=excluded.zone,updated_at=excluded.updated_at');
+db.exec('BEGIN');try{for(const r of records)q.run(r.id||randomUUID(),r.name,r.price,r.unit,r.zone,r.updatedAt||r.updated_at||new Date().toISOString());db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}db.close();console.log(`Importados: ${records.length} materiales.`);

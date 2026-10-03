@@ -1,0 +1,16 @@
+[Unit]
+Description=Comercializadora Sion JR SAS
+After=network.target
+[Service]
+Type=simple
+User=sion
+WorkingDirectory=/opt/sion-jr
+ExecStart=/usr/bin/node --env-file=/opt/sion-jr/.env /opt/sion-jr/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/sion-jr/data
+[Install]
+WantedBy=multi-user.target

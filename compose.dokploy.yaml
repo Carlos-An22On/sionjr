@@ -1,0 +1,38 @@
+services:
+  sion:
+    build:
+      context: .
+    restart: unless-stopped
+    init: true
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_PATH: /app/data/sion.sqlite
+      APP_ORIGIN: https://${DOMAIN:?Configura DOMAIN con tu dominio sin https}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Configura ADMIN_PASSWORD con una clave segura}
+    volumes:
+      - sion_data:/app/data
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/zonas').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.sion-jr.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.sion-jr.entrypoints=websecure
+      - traefik.http.routers.sion-jr.tls.certresolver=letsencrypt
+      - traefik.http.services.sion-jr.loadbalancer.server.port=3000
+    networks:
+      - dokploy-network
+
+volumes:
+  sion_data:
+
+networks:
+  dokploy-network:
+    external: true

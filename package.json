@@ -1,0 +1,13 @@
+{
+  "name": "sion-jr-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "start": "node --env-file=.env server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}
